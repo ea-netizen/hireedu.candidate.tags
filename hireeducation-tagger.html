@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HireEducation — Candidate Tagger</title>
+<link href="https://fonts.googleapis.com/css2?family=Alice&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --teal: #07929f;
+  --teal-light: #e8f7f8;
+  --teal-mid: #b2dfe3;
+  --orange: #f68930;
+  --orange-light: #fef3e8;
+  --dark: #2a2a2a;
+  --body: #545454;
+  --bg: #f5f7f8;
+  --white: #ffffff;
+  --border: #dde3e5;
+  --green: #22a06b;
+  --green-light: #e3f7ef;
+  --amber: #f68930;
+  --amber-light: #fef3e8;
+  --grey: #8f9ba8;
+  --grey-light: #f0f2f4;
+  --red: #d93025;
+  --shadow: 0 2px 12px rgba(7,146,159,0.10);
+  --shadow-lg: 0 6px 32px rgba(7,146,159,0.14);
+}
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: var(--bg);
+  color: var(--body);
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* HEADER */
+.header {
+  background: var(--white);
+  border-bottom: 2px solid var(--teal);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  height: 60px;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(7,146,159,0.08);
+}
+
+.logo-mark {
+  width: 36px; height: 36px;
+  background: var(--teal);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 18px; font-weight: bold;
+  font-family: 'Alice', serif;
+  flex-shrink: 0;
+}
+
+.logo-text {
+  font-family: 'Alice', serif;
+  font-size: 18px;
+  color: var(--dark);
+  letter-spacing: -0.3px;
+}
+
+.logo-text span { color: var(--teal); }
+
+.header-tag {
+  margin-left: auto;
+  background: var(--teal-light);
+  color: var(--teal);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+
+/* LAYOUT */
+.layout {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* CARDS */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.card-title {
+  font-family: 'Alice', serif;
+  font-size: 16px;
+  color: var(--dark);
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.card-title .icon { font-size: 16px; }
+
+/* TABS */
+.tabs {
+  display: flex;
+  gap: 0;
+  background: var(--grey-light);
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 18px;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--grey);
+  transition: all 0.18s;
+}
+
+.tab.active {
+  background: var(--white);
+  color: var(--teal);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+}
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* INPUTS */
+label.field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--grey);
+  margin-bottom: 7px;
+}
+
+input[type="text"], textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--dark);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.18s;
+}
+
+input[type="text"]:focus, textarea:focus { border-color: var(--teal); background: var(--white); }
+input[type="text"]::placeholder, textarea::placeholder { color: #bcc4c8; }
+
+textarea {
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.6;
+  font-size: 12px;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--grey);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+/* DROP ZONE */
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.18s;
+  position: relative;
+  margin-bottom: 4px;
+}
+
+.dropzone:hover, .dropzone.drag-over {
+  border-color: var(--teal);
+  background: var(--teal-light);
+}
+
+.dropzone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+
+.drop-icon { font-size: 26px; margin-bottom: 6px; }
+.drop-text { font-size: 13px; font-weight: 600; color: var(--dark); margin-bottom: 3px; }
+.drop-sub { font-size: 11px; color: var(--grey); }
+
+.file-badge {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: var(--teal-light);
+  border: 1px solid var(--teal-mid);
+  border-radius: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.file-badge.show { display: flex; }
+.file-badge-name { flex: 1; color: var(--teal); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-badge-remove { cursor: pointer; color: var(--grey); font-size: 16px; line-height: 1; }
+.file-badge-remove:hover { color: var(--red); }
+
+/* BUTTONS */
+.btn {
+  border: none;
+  border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+
+.btn-primary {
+  background: var(--teal);
+  color: white;
+  padding: 10px 20px;
+  font-size: 13px;
+  width: 100%;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.btn-primary:hover { background: #068995; transform: translateY(-1px); box-shadow: var(--shadow); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btn-secondary {
+  background: var(--grey-light);
+  color: var(--body);
+  padding: 7px 14px;
+  font-size: 12px;
+}
+
+.btn-secondary:hover { background: var(--border); }
+
+.btn-copy {
+  background: var(--orange);
+  color: white;
+  padding: 10px 20px;
+  font-size: 13px;
+  justify-content: center;
+}
+
+.btn-copy:hover { background: #e07820; }
+.btn-copy.done { background: var(--green); }
+
+/* URL ROW */
+.url-row {
+  display: flex; gap: 8px;
+  margin-bottom: 4px;
+}
+
+.url-row input { flex: 1; }
+
+.url-row .btn {
+  background: var(--teal);
+  color: white;
+  padding: 10px 16px;
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.url-row .btn:hover { background: #068995; }
+
+/* ERROR */
+.error-bar {
+  display: none;
+  background: #fdecea;
+  border: 1px solid #f5c6c3;
+  border-radius: 7px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--red);
+  margin-top: 10px;
+}
+
+.error-bar.show { display: block; }
+
+/* LOADING */
+.loading-state {
+  display: none;
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.loading-state.show { display: block; }
+
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--teal-mid);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  margin: 0 auto 14px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-label {
+  font-size: 13px;
+  color: var(--grey);
+  font-weight: 500;
+}
+
+/* RESULTS PANEL */
+.results-panel {
+  display: none;
+  animation: fadeUp 0.35s ease forwards;
+}
+
+.results-panel.show { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.candidate-summary {
+  background: var(--teal-light);
+  border: 1px solid var(--teal-mid);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+
+.candidate-name {
+  font-family: 'Alice', serif;
+  font-size: 16px;
+  color: var(--dark);
+  margin-bottom: 4px;
+}
+
+.candidate-blurb {
+  font-size: 12px;
+  color: var(--body);
+  line-height: 1.6;
+}
+
+/* CATEGORY SECTIONS */
+.cat-section {
+  margin-bottom: 20px;
+}
+
+.cat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cat-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--dark);
+}
+
+.cat-count {
+  font-size: 10px;
+  background: var(--grey-light);
+  color: var(--grey);
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* TAG CHIPS */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s;
+  user-select: none;
+  border: 1.5px solid transparent;
+}
+
+/* High confidence */
+.chip.high {
+  background: var(--green-light);
+  border-color: #9de0c5;
+  color: #1a7a52;
+}
+
+.chip.high.selected {
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
+}
+
+/* Medium confidence */
+.chip.medium {
+  background: var(--amber-light);
+  border-color: #f9c88b;
+  color: #a05c10;
+}
+
+.chip.medium.selected {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: white;
+}
+
+/* Needs confirmation */
+.chip.confirm {
+  background: var(--grey-light);
+  border-color: var(--border);
+  color: var(--grey);
+}
+
+.chip.confirm.selected {
+  background: var(--grey);
+  border-color: var(--grey);
+  color: white;
+}
+
+.chip:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.10); }
+
+.chip-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chip.high .chip-dot, .chip.high.selected .chip-dot { background: #22a06b; }
+.chip.high.selected .chip-dot { background: white; }
+.chip.medium .chip-dot, .chip.medium.selected .chip-dot { background: var(--orange); }
+.chip.medium.selected .chip-dot { background: white; }
+.chip.confirm .chip-dot { background: var(--grey); }
+.chip.confirm.selected .chip-dot { background: white; }
+
+/* LEGEND */
+.legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: var(--grey-light);
+  border-radius: 8px;
+}
+
+.legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--body); font-weight: 500;
+}
+
+.legend-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+
+/* NOTES BOX */
+.notes-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--teal);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 12px;
+  color: var(--body);
+  line-height: 1.7;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+/* COPY BAR */
+.copy-bar {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  bottom: 20px;
+  box-shadow: var(--shadow-lg);
+}
+
+.copy-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--teal);
+  white-space: nowrap;
+}
+
+.copy-preview {
+  flex: 1;
+  font-size: 12px;
+  color: var(--grey);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* PLACEHOLDER */
+.empty-state {
+  text-align: center;
+  padding: 52px 24px;
+  color: var(--grey);
+}
+
+.empty-icon { font-size: 36px; margin-bottom: 12px; }
+.empty-title { font-family: 'Alice', serif; font-size: 16px; color: var(--dark); margin-bottom: 6px; }
+.empty-sub { font-size: 12px; line-height: 1.6; }
+
+/* CONFIRM SECTION NOTE */
+.confirm-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--grey-light);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--grey);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-mark">H</div>
+  <div class="logo-text">Hire<span>Education</span></div>
+  <div class="header-tag">Candidate Tagger · Crelate</div>
+</div>
+
+<div class="layout">
+
+  <!-- LEFT: Input -->
+  <div>
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title"><span class="icon">🔍</span> Analyze Candidate</div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('linkedin', this)">LinkedIn URL</button>
+        <button class="tab" onclick="switchTab('resume', this)">Paste Profile</button>
+        <button class="tab" onclick="switchTab('upload', this)">Upload Resume</button>
+      </div>
+
+      <!-- LinkedIn -->
+      <div class="panel active" id="panel-linkedin">
+        <label class="field-label">LinkedIn Profile URL</label>
+        <div class="url-row">
+          <input type="text" id="linkedinUrl" placeholder="https://www.linkedin.com/in/..." />
+          <button class="btn" onclick="analyzeLinkedIn()">Go</button>
+        </div>
+        <p class="field-hint">Claude will search the public profile and suggest tags.</p>
+        <div class="error-bar" id="err-linkedin"></div>
+      </div>
+
+      <!-- Paste -->
+      <div class="panel" id="panel-resume">
+        <label class="field-label">Paste Profile Text</label>
+        <textarea id="pasteText" placeholder="Paste LinkedIn About section, job history, resume text — anything with career context."></textarea>
+        <div class="error-bar" id="err-paste"></div>
+        <button class="btn btn-primary" onclick="analyzePaste()">Analyze Profile</button>
+      </div>
+
+      <!-- Upload -->
+      <div class="panel" id="panel-upload">
+        <label class="field-label">Resume File</label>
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt" onchange="handleFile(event)">
+          <div class="drop-icon">📄</div>
+          <div class="drop-text">Drop resume or click to browse</div>
+          <div class="drop-sub">PDF, DOC, DOCX, or TXT</div>
+        </div>
+        <div class="file-badge" id="fileBadge">
+          <span>📎</span>
+          <span class="file-badge-name" id="fileName"></span>
+          <span class="file-badge-remove" onclick="clearFile()">✕</span>
+        </div>
+        <div class="error-bar" id="err-upload"></div>
+        <button class="btn btn-primary" id="analyzeUploadBtn" onclick="analyzeUpload()" disabled>Analyze Resume</button>
+      </div>
+    </div>
+
+    <!-- Candidate name override -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title" style="margin-bottom:12px;"><span class="icon">👤</span> Candidate Name (optional)</div>
+      <input type="text" id="candidateName" placeholder="First Last — shown in summary" />
+    </div>
+
+    <!-- Legend -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;font-size:13px;"><span class="icon">ℹ️</span> Confidence Key</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;line-height:1.5;">
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#22a06b;flex-shrink:0;margin-top:3px;display:inline-block;"></span>
+          <span><b>High</b> — directly inferred from title or known EdTech company. Pre-selected.</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#f68930;flex-shrink:0;margin-top:3px;display:inline-block;"></span>
+          <span><b>Medium</b> — inferred from context. Pre-selected but please verify.</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#8f9ba8;flex-shrink:0;margin-top:3px;display:inline-block;"></span>
+          <span><b>Confirm</b> — cannot be inferred. Recruiter input only. Not pre-selected.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Results -->
+  <div>
+
+    <!-- Loading -->
+    <div class="loading-state card" id="loading">
+      <div class="spinner"></div>
+      <div class="loading-label" id="loadingText">Analyzing candidate profile...</div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="card empty-state" id="emptyState">
+      <div class="empty-icon">🏷</div>
+      <div class="empty-title">Ready to tag</div>
+      <div class="empty-sub">Paste a LinkedIn URL, profile text, or upload a resume on the left.<br>Claude will suggest Crelate tags using HireEducation's 358-tag taxonomy.</div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-panel" id="results">
+      <div class="candidate-summary" id="candidateSummary"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#22a06b;"></div> High confidence</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f68930;"></div> Medium — verify</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8f9ba8;"></div> Needs confirmation</div>
+        <div class="legend-item" style="margin-left:auto;font-size:11px;color:var(--grey);">Click any tag to toggle</div>
+      </div>
+      <div id="tagSections"></div>
+      <div class="notes-box" id="notesBox" style="display:none;"></div>
+      <div class="copy-bar">
+        <div class="copy-count" id="copyCount">0 tags selected</div>
+        <div class="copy-preview" id="copyPreview">Select tags above</div>
+        <button class="btn btn-copy" id="copyBtn" onclick="copyTags()">Copy to Clipboard</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── FULL TAG TAXONOMY ───────────────────────────────────────────────────────
+const TAGS = {
+  "General": ["Applied","Bilingual","Bilingual - Arabic","Bilingual - Chinese","Bilingual - French","Bilingual - German","Bilingual - Italian","Bilingual - Japanese","Bilingual - Korean","Bilingual - Russian","Bilingual - Spanish","BIPOC","Cannot Find","FF","Former Administrator","Former Administrator - EC","Former Administrator - HE","Former Administrator - K12","Former Educator","Former Educator - HE","Former Educator - K12","Former Superintendent","Fractional","MPC","Needs Visa Sponsorship","Part-Time","Placed Candidate","Publishing Lifer","Red Flag","Retired","Self-Employed","Startup Company","TFA","Unplaceable","WW"],
+  "Sells To": ["B2B","B2C","C-Suite - CTO","Corporate","Corporate - C-Suite","Early Childhood - Daycares","Early Childhood - Head Start Programs","Early Childhood - Preschools","EdTech","Government","Govt. - Federal","Govt. - Municipalities","HE","HE - Admissions","HE - C-Suite","HE - Campus-Level","HE - Community Colleges","HE - Faculty","HE - Marketing","HE - Med Schools","HE - Private","HE - Provosts","HE - Registrar","HE - ResLife","HE - Systems","Healthcare","Healthcare - C-Suite","Healthcare - Systems","K12","K12 - C-Suite","K12 - Charter","K12 - District-level","K12 - DOE","K12 - Faculty","K12 - High Schools","K12 - Large Districts","K12 - Private","K12 - School-Level","K12 - Systems","Libraries - Public","Libraries - School","Mid-Market","Nonprofit","Out of Ed Industry","SLED","SLED - Education","SLED - Local","SLED - State"],
+  "Role Title/Level": ["Account Executive","Account Manager","Admin","Advisor","Assistant","Associate","BDR","Board Member","C-Level","CAO","CEO","CFO","CGO","Channel Sales Manager","Chief of Staff","CHRO","CIO","CLO","CMO","Coach","Consultant","Content Manager","Controller","COO/GM/President","Coordinator","CPO","CRO","CTO/VP Engineering","Curriculum Developer","CXO","Data Analyst","Dean","Director","Editor","Founder","Government Sales","Hiring Manager","Individual Contributor","Inside Sales Manager","Internal Recruiter","Investor","Leadership - Nonprofit","Lobbyist","Manager","Owner","Player/Coach","Principal","Program Manager","Project Manager","Recruiter","Rep","RFP Writer","Sales Manager","SDR","Senior Manager","Software Engineer","Solutions Architect","Solutions Engineer","Specialist","Superintendent","Teacher/Professor/Instructor","VP"],
+  "Role Function": ["Administration - PK-20 Schools","Admissions","Channel Sales","Communications","Creative","Creative - Media","Creative - Writing","Curriculum & Instructional Design","Customer Experience","Customer Success","Customer Support","Data Analytics","DEI","Dept Edu - Federal","Dept Edu - State","Dept Edu - Urban","Education Policy","Event Management","Finance","Financial Services","Fundraising","Graphic Design","GTM","Human Resources","Implementation","Investor","IT","IT/DevOps","IT/Systems","Legal","Management","Market Research","Marketing","Marketing - Brand","Marketing - Content","Marketing - DemandGen","Marketing - Digital","Marketing - Events","Marketing - PR","Marketing - Product","Mergers & Acquisitions","Office Management","Operations","Operations - Supply Chain","Partnerships","Procurement","Product Development","Product Management","Professional Development","Program Management","Project Management","Proposals/Grants","Quality Assurance","Research","Revenue Operations","Sales","Sales Enablement","Sales Operations","Services","Software Engineering","Student Success","Talent Acquisition","Tech Support","Technical","UI/UX"],
+  "What They Sell": ["Academic Products","Administrative Products","After School Programs","AI","Assessments","Books","Camps","College Readiness","Cybersecurity","Data Systems","Education","Education - Global Studies","eLearning","Enrollment Mgmt","Finances and Fees","Fundraising","Games","Grading and Attendance","Hardware","Hardware - Smart Boards","Insurance","Interoperability","Job Search","Lesson Planning","LMS","Marketing Services","Online Proctoring","OPM","Paying for College","Payments","Presentation Tools","Professional Development","Retail","SaaS","SaaS - Enterprise","SaaS - ERP","Safety","Services","SIS","Staffing","Student Success","Teacher Needs","Test Prep","Translation","Tutoring","VR","Workforce Development"],
+  "Industry": ["Corporate Learning Products & Services","Government / Policy","HR Tech","Investments","Legal","Management Consultant","Marketing","Nonprofit","Out of Ed Industry","PK-20 Education Products & Services","Publishing","Recruitment / Talent","School - Charter School","School - Early Childhood","School - HE","School - K12","School - K12 After-School Programs","School - K12 Online","School - Online","Security","Service Providers","Tech/Software - General"],
+  "Curriculum Subjects": ["Computer Science","Core Curriculum","Creative Arts","CTE","ELA/Humanities","Engineering","History/Social Studies","Intervention","Language Learning","Literacy/Writing","Math","Mental Healthcare","Nursing","Science","SEL/MTSS","STEM/STEAM","Supplemental"],
+  "Software Skills": [".NET","Agile/SCRUM","AJAX","Angular","ASP.NET","AWS Cloud","Azure Cloud","Bootstrap","C","C#","C++","CSS","Docker","Git","HTML","HTML5","iOS","Java","JavaScript","Jenkins","MongoDB","MVC","MySQL","Node.js","PHP","Python","React","RestAPI","Salesforce","SQL","Swift","Typescript","Vue","Waterfall","XML"]
+};
+
+// NEVER auto-suggest these
+const BLOCKED = new Set(["Red Flag","Unplaceable","Placed Candidate","BIPOC","WW","FF","MPC","2024 CAEL Speakers","AACRAO SEM 2024","AIR Show 2024","ASU-GSV 2024","ASU-GSV 2025","ASU-GSV 2026","CAEL 2024","EdTech Week 2023","EdTech Week 2024","EdTech Week 2025","EDUCAUSE 2023","EDUCAUSE 2025","GSV 50","GSV Cup 2024","GSV-150 2024","GSV-150 2025","ISTE 2024","ISTE 2025","MagPath 2024","MassCue","MassCue 2025","NAEYC 2024","SXSW 2023","SXSW 2024","SXSW 2025","SXSW 2026","Transcend Fellow 2024"]);
+
+const EDTECH_COMPANIES = ["instructure","canvas","schoology","powerschool","renaissance learning","accelerated reader","curriculum associates","i-ready","panorama education","illuminate education","branching minds","nearpod","newsela","amplify","dreambox","seesaw","bloomz","lexia","ixl learning","khan academy","imagine learning","carnegie learning","frontline education","infinite campus","skyward","lightspeed systems","classlink","clever","tyler technologies","raptor technologies","eab","civitas learning","anthology","blackboard","ellucian","handshake","modern campus","mongoose","element451","rnl","ruffalo noel levitz","d2l","brightspace","coursera","linkedin learning","cornerstone ondemand","degreed","guild education","edassist","bright horizons","udemy","edtech","schoolmint","houghton mifflin","mcgraw hill","pearson","savvas","heinemann","national geographic learning","cengage","vernier","pltw","project lead the way","kipp","uncommon schools","achievement first","teach for america","tfa","panorama","waterford","really good stuff","brainpop","flocabulary","epic","sora","follett","mackin","overdrive","kajeet","securly","bark","netsupport","go guardian","hapara","n2y","stages learning","presence","tetra","frontline","powerdms","absence management","aesop","applitrack","talent ed","recruit & hire","unified talent","edia","age of learning","abcmouse","prodigy","reflex","freckle","kiddom","edpuzzle","pear deck","formative","kahoot","quizlet","padlet","flip","flipgrid","wakelet","peardeck","classkick","edulastic","newsela","achieve3000","actively learn","commonlit","myon","reading plus","raz-kids","reading a-z","learning a-z","science a-z","headsprout","waterford upstart","istation","reading eggs","mathseeds","motion math","number pieces","desmos","khan","zearn","st math","mind research","first in math","reflex math","xtramath","typing.com","typing agent","dance mat","keyboarding","code.org","scratch","tynker","globaloria","kodable","kodiak","codespark","lightbot","sphero","osmo","lego education","vex robotics","pitsco","flinn scientific","ward's science","carolina biological","nasco","sax arts","dick blick","frey scientific","lab-aids","it's about time","project wet","national geographic","nasa","noaa","usgs","doe","nrcs","epa","nsf","nih","cdc","aclu","naacp","aft","nea","principal partnership","college board","act","ets","sat","psat","ap","ib","dual enrollment","early college","dual credit","advanced placement","international baccalaureate","common app","naviance","scoir","cialfo","college vine","maia learning","parchment","national student clearinghouse","studenttracker","veritiv","demco","brodart","bibliotheca","self-check","rfid","3m library","envisionware","library corporation","tlc","polaris","symphony","koha","evergreen","destiny","titlewave","follett destiny","texthelp","kurzweil","read&write","bookshare","learning ally","natural reader","speechify","otter.ai","fireflies","gong","outreach","salesloft","hubspot","salesforce","marketo","pardot","eloqua","mailchimp","constant contact","hootsuite","sprout social","buffer","loomly","canva","figma","adobe","microsoft","google","apple","dell","hp","lenovo","chromebook","ipad","surface","zoom","microsoft teams","google workspace","google classroom","seesaw","remind","talking points","bloomz","school messenger","parent square","student information system","sis","erp","lms","cms","crm","hris","ats","lrs","caliper","qti","sif","ed-fi","clever","classlink","rostering","sso","single sign-on","ldap","azure ad","okta","duo","crowdstrike","palo alto networks","fortinet","zscaler","proofpoint","mimecast","barracuda","trend micro","mcafee","norton","symantec","kaspersky","cylance","carbon black","sentinel one","darktrace","recorded future","threat intelligence","edtech week","iste","sxsw edu","fetc","bett","ascd","nassp","naesp","aasa","cgcs","ccsso","essa","idea","hipaa","ferpa","coppa","gdpr","ccpa"];
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let selectedTags = new Set();
+let selectedFile = null;
+
+// ─── UI HELPERS ─────────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+function handleFile(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  selectedFile = f;
+  document.getElementById('fileName').textContent = f.name;
+  document.getElementById('fileBadge').classList.add('show');
+  document.getElementById('analyzeUploadBtn').disabled = false;
+}
+
+function clearFile() {
+  selectedFile = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileBadge').classList.remove('show');
+  document.getElementById('analyzeUploadBtn').disabled = true;
+}
+
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) { selectedFile = f; document.getElementById('fileName').textContent = f.name; document.getElementById('fileBadge').classList.add('show'); document.getElementById('analyzeUploadBtn').disabled = false; }
+});
+
+function showLoading(msg) {
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('loadingText').textContent = msg || 'Analyzing candidate...';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('results').classList.remove('show');
+}
+
+function hideLoading() {
+  document.getElementById('loading').classList.remove('show');
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 7000);
+}
+
+// ─── CLAUDE API ──────────────────────────────────────────────────────────────
+const SYSTEM_PROMPT = `You are a recruitment data assistant for HireEducation, a specialist EdTech sales recruiter. Analyze candidate profiles and suggest Crelate CRM tags.
+
+Return ONLY valid JSON. No markdown, no preamble. Only suggest tags from the provided TAG TAXONOMY. Never suggest these tags: Red Flag, Unplaceable, Placed Candidate, any conference/event tags (ISTE, SXSW, ASU-GSV etc.), or any diversity/personal flags (BIPOC, WW, FF, MPC, TFA).
+
+Confidence levels:
+- "high": directly inferred from job title or known EdTech company name
+- "medium": inferred from context, should be verified by recruiter
+- "confirm": cannot be inferred — recruiter must fill manually (use for Candidate Status, Availability, District Relationship Depth, OTE Range)
+
+Return JSON in this exact structure:
+{
+  "name": "Candidate full name if found, else null",
+  "summary": "1-2 sentence profile summary",
+  "suggestions": [
+    { "category": "Role Title/Level", "tag": "Account Executive", "confidence": "high", "reason": "Current title at Instructure" }
+  ],
+  "notes": "Brief notes for the recruiter — anything notable, gaps, or cautions"
+}`;
+
+async function callClaudeWithText(profileText) {
+  const allTags = Object.entries(TAGS).map(([cat, tags]) => `${cat}: ${tags.join(', ')}`).join('\n');
+
+  const userMsg = `PROFILE TEXT:\n${profileText}\n\nTAG TAXONOMY:\n${allTags}\n\nAnalyze this candidate and return tag suggestions as JSON.`;
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userMsg }]
+    })
+  });
+
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error?.message || 'API error');
+  const text = data.content.find(b => b.type === 'text')?.text || '';
+  return JSON.parse(text.replace(/```json|```/g, '').trim());
+}
+
+async function callClaudeWithLinkedIn(url) {
+  const allTags = Object.entries(TAGS).map(([cat, tags]) => `${cat}: ${tags.join(', ')}`).join('\n');
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      system: SYSTEM_PROMPT,
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+      messages: [{
+        role: 'user',
+        content: `Search for this LinkedIn profile and extract their career background: ${url}\n\nThen using that information, return tag suggestions from this TAG TAXONOMY:\n${allTags}\n\nReturn only valid JSON as instructed.`
+      }]
+    })
+  });
+
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error?.message || 'API error');
+  const textBlock = data.content.find(b => b.type === 'text');
+  if (!textBlock) throw new Error('No text response from API');
+  return JSON.parse(textBlock.text.replace(/```json|```/g, '').trim());
+}
+
+async function callClaudeWithPDF(base64Data) {
+  const allTags = Object.entries(TAGS).map(([cat, tags]) => `${cat}: ${tags.join(', ')}`).join('\n');
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      system: SYSTEM_PROMPT,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64Data } },
+          { type: 'text', text: `Analyze this resume and suggest tags from the following TAG TAXONOMY:\n${allTags}\n\nReturn only valid JSON as instructed.` }
+        ]
+      }]
+    })
+  });
+
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error?.message || 'API error');
+  const textBlock = data.content.find(b => b.type === 'text');
+  return JSON.parse(textBlock.text.replace(/```json|```/g, '').trim());
+}
+
+// ─── ANALYZE TRIGGERS ────────────────────────────────────────────────────────
+async function analyzeLinkedIn() {
+  const url = document.getElementById('linkedinUrl').value.trim();
+  if (!url.includes('linkedin.com')) { showError('err-linkedin', 'Please enter a valid LinkedIn profile URL.'); return; }
+  showLoading('Searching LinkedIn profile and analyzing...');
+  try {
+    const result = await callClaudeWithLinkedIn(url);
+    renderResults(result);
+  } catch (e) {
+    hideLoading();
+    document.getElementById('emptyState').style.display = '';
+    showError('err-linkedin', 'Error: ' + e.message);
+  }
+}
+
+async function analyzePaste() {
+  const text = document.getElementById('pasteText').value.trim();
+  if (!text) { showError('err-paste', 'Please paste some profile text first.'); return; }
+  showLoading('Analyzing profile text...');
+  try {
+    const result = await callClaudeWithText(text);
+    renderResults(result);
+  } catch (e) {
+    hideLoading();
+    document.getElementById('emptyState').style.display = '';
+    showError('err-paste', 'Error: ' + e.message);
+  }
+}
+
+async function analyzeUpload() {
+  if (!selectedFile) return;
+  showLoading('Reading resume and analyzing...');
+  try {
+    let result;
+    if (selectedFile.type === 'application/pdf') {
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(selectedFile);
+      });
+      result = await callClaudeWithPDF(base64);
+    } else {
+      const text = await selectedFile.text();
+      result = await callClaudeWithText(text);
+    }
+    renderResults(result);
+  } catch (e) {
+    hideLoading();
+    document.getElementById('emptyState').style.display = '';
+    showError('err-upload', 'Error: ' + e.message);
+  }
+}
+
+// ─── RENDER RESULTS ──────────────────────────────────────────────────────────
+function renderResults(result) {
+  hideLoading();
+  selectedTags = new Set();
+
+  // Filter out blocked tags from suggestions
+  const suggestions = (result.suggestions || []).filter(s => !BLOCKED.has(s.tag));
+
+  // Pre-select high and medium confidence
+  suggestions.forEach(s => {
+    if (s.confidence === 'high' || s.confidence === 'medium') {
+      selectedTags.add(s.tag);
+    }
+  });
+
+  // Candidate summary
+  const name = document.getElementById('candidateName').value.trim() || result.name || 'Candidate';
+  const summaryEl = document.getElementById('candidateSummary');
+  summaryEl.innerHTML = `<div class="candidate-name">${name}</div><div class="candidate-blurb">${result.summary || ''}</div>`;
+
+  // Group suggestions by category
+  const byCategory = {};
+  suggestions.forEach(s => {
+    if (!byCategory[s.category]) byCategory[s.category] = [];
+    byCategory[s.category].push(s);
+  });
+
+  const sectionsEl = document.getElementById('tagSections');
+  sectionsEl.innerHTML = '';
+
+  // Render suggested categories first
+  Object.entries(byCategory).forEach(([cat, items]) => {
+    const section = document.createElement('div');
+    section.className = 'cat-section';
+    section.innerHTML = `<div class="cat-header"><span class="cat-name">${cat}</span><span class="cat-count">${items.length} suggested</span></div><div class="tags-row" id="row-${cat.replace(/\W/g,'')}"></div>`;
+    sectionsEl.appendChild(section);
+    const row = section.querySelector('.tags-row');
+    items.forEach(s => row.appendChild(makeChip(s.tag, s.confidence, s.reason)));
+  });
+
+  // Notes
+  const notesEl = document.getElementById('notesBox');
+  if (result.notes) {
+    notesEl.textContent = '📝 ' + result.notes;
+    notesEl.style.display = '';
+  } else {
+    notesEl.style.display = 'none';
+  }
+
+  updateCopyBar();
+  document.getElementById('results').classList.add('show');
+  document.getElementById('emptyState').style.display = 'none';
+}
+
+function makeChip(tag, confidence, reason) {
+  const chip = document.createElement('div');
+  chip.className = `chip ${confidence}`;
+  chip.dataset.tag = tag;
+  chip.title = reason || '';
+
+  if (selectedTags.has(tag)) chip.classList.add('selected');
+
+  const dot = document.createElement('span');
+  dot.className = 'chip-dot';
+  chip.appendChild(dot);
+  chip.appendChild(document.createTextNode(tag));
+
+  chip.addEventListener('click', () => {
+    if (selectedTags.has(tag)) {
+      selectedTags.delete(tag);
+      chip.classList.remove('selected');
+    } else {
+      selectedTags.add(tag);
+      chip.classList.add('selected');
+    }
+    updateCopyBar();
+  });
+
+  return chip;
+}
+
+function updateCopyBar() {
+  const arr = [...selectedTags];
+  const count = arr.length;
+  document.getElementById('copyCount').textContent = count + ' tag' + (count !== 1 ? 's' : '') + ' selected';
+  document.getElementById('copyPreview').textContent = count ? arr.join(', ') : 'Select tags above';
+  document.getElementById('copyBtn').textContent = count ? 'Copy to Clipboard' : 'Copy to Clipboard';
+  document.getElementById('copyBtn').classList.remove('done');
+}
+
+function copyTags() {
+  const text = [...selectedTags].join(', ');
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('done');
+    setTimeout(() => { btn.textContent = 'Copy to Clipboard'; btn.classList.remove('done'); }, 2500);
+  });
+}
+</script>
+</body>
+</html>
