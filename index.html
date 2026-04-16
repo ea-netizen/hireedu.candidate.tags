@@ -577,7 +577,7 @@ textarea {
       <label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--grey);margin-bottom:5px;">Claude API Key</label>
       <input type="password" id="webApiKey" placeholder="sk-ant-..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--dark);font-family:inherit;font-size:12px;outline:none;" />
     </div>
-    <button onclick="saveWebApiKey()" style="background:var(--teal);color:white;border:none;border-radius:8px;padding:10px 18px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Save Key</button>
+    <button id="saveApiKeyBtn" style="background:var(--teal);color:white;border:none;border-radius:8px;padding:10px 18px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Save Key</button>
     <span id="keySavedMsg" style="display:none;font-size:12px;font-weight:700;color:var(--green);">✓ Saved</span>
   </div>
 
@@ -588,9 +588,9 @@ textarea {
       <div class="card-title"><span class="icon">🔍</span> Analyze Candidate</div>
 
       <div class="tabs">
-        <button class="tab active" onclick="switchTab('linkedin', this)">LinkedIn URL</button>
-        <button class="tab" onclick="switchTab('resume', this)">Paste Profile</button>
-        <button class="tab" onclick="switchTab('upload', this)">Upload Resume</button>
+        <button class="tab active" id="tab-linkedin">LinkedIn URL</button>
+        <button class="tab" id="tab-resume">Paste Profile</button>
+        <button class="tab" id="tab-upload">Upload Resume</button>
       </div>
 
       <!-- LinkedIn -->
@@ -598,7 +598,7 @@ textarea {
         <label class="field-label">LinkedIn Profile URL</label>
         <div class="url-row">
           <input type="text" id="linkedinUrl" placeholder="https://www.linkedin.com/in/..." />
-          <button class="btn" onclick="analyzeLinkedIn()">Go</button>
+          <button class="btn" id="analyzeLinkedInBtn">Go</button>
         </div>
         <p class="field-hint">Claude will search the public profile and suggest tags.</p>
         <div class="error-bar" id="err-linkedin"></div>
@@ -609,21 +609,21 @@ textarea {
         <label class="field-label">Paste Profile Text</label>
         <textarea id="pasteText" placeholder="Paste LinkedIn About section, job history, resume text — anything with career context."></textarea>
         <div class="error-bar" id="err-paste"></div>
-        <button class="btn btn-primary" onclick="analyzePaste()">Analyze Profile</button>
+        <button class="btn btn-primary" id="analyzePasteBtn">Analyze Profile</button>
       </div>
 
       <!-- Upload -->
       <div class="panel" id="panel-upload">
         <label class="field-label">Documents &amp; Notes</label>
         <div class="dropzone" id="dropzone">
-          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt" multiple onchange="handleFiles(event)">
+          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt" multiple>
           <div class="drop-icon">📎</div>
           <div class="drop-text">Drop files or click to browse</div>
           <div class="drop-sub">Resume, call transcript, notes — PDF, DOCX, or TXT · Multiple files OK</div>
         </div>
         <div id="fileList" style="display:none;margin-top:10px;display:flex;flex-direction:column;gap:6px;"></div>
         <div class="error-bar" id="err-upload"></div>
-        <button class="btn btn-primary" id="analyzeUploadBtn" onclick="analyzeUpload()" disabled>Analyze All Documents</button>
+        <button class="btn btn-primary" id="analyzeUploadBtn" disabled>Analyze All Documents</button>
       </div>
     </div>
 
@@ -683,7 +683,7 @@ textarea {
       <div class="copy-bar">
         <div class="copy-count" id="copyCount">0 tags selected</div>
         <div class="copy-preview" id="copyPreview">Select tags above</div>
-        <button class="btn btn-copy" id="copyBtn" onclick="copyTags()">Copy to Clipboard</button>
+        <button class="btn btn-copy" id="copyBtn" id="copyTagsBtn">Copy to Clipboard</button>
       </div>
     </div>
 
@@ -764,6 +764,10 @@ function renderFileList() {
 const dz = document.getElementById('dropzone');
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
 dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+
+// Wire file input and analyze button via JS (inline handlers blocked by CSP)
+document.getElementById('fileInput').addEventListener('change', handleFiles);
+document.getElementById('analyzeUploadBtn').addEventListener('click', analyzeUpload);
 dz.addEventListener('drop', e => {
   e.preventDefault(); dz.classList.remove('drag-over');
   const newFiles = Array.from(e.dataTransfer.files);
@@ -1118,6 +1122,29 @@ function copyTags() {
       document.getElementById('apiKeyBanner').style.borderColor = 'var(--teal)';
     }
   });
+
+// ─── WIRE ALL BUTTONS (CSP-safe) ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  // API key
+  var saveApiBtn = document.getElementById('saveApiKeyBtn');
+  if (saveApiBtn) saveApiBtn.addEventListener('click', saveWebApiKey);
+
+  // Tabs
+  var tabLinkedIn = document.getElementById('tab-linkedin');
+  var tabResume = document.getElementById('tab-resume');
+  var tabUpload = document.getElementById('tab-upload');
+  if (tabLinkedIn) tabLinkedIn.addEventListener('click', function() { switchTab('linkedin', this); });
+  if (tabResume) tabResume.addEventListener('click', function() { switchTab('resume', this); });
+  if (tabUpload) tabUpload.addEventListener('click', function() { switchTab('upload', this); });
+
+  // Analyze buttons
+  var linkedInBtn = document.getElementById('analyzeLinkedInBtn');
+  var pasteBtn = document.getElementById('analyzePasteBtn');
+  var copyBtn = document.getElementById('copyTagsBtn');
+  if (linkedInBtn) linkedInBtn.addEventListener('click', analyzeLinkedIn);
+  if (pasteBtn) pasteBtn.addEventListener('click', analyzePaste);
+  if (copyBtn) copyBtn.addEventListener('click', copyTags);
+});
 </script>
 </body>
 </html>
