@@ -570,6 +570,18 @@ textarea {
 
 <div class="layout">
 
+  <!-- API KEY BANNER -->
+  <div id="apiKeyBanner" class="card" style="margin-bottom:20px;grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:16px 20px;">
+    <span style="font-size:16px;">🔑</span>
+    <div style="flex:1;">
+      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--grey);margin-bottom:5px;">Claude API Key</label>
+      <input type="password" id="webApiKey" placeholder="sk-ant-..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--dark);font-family:inherit;font-size:12px;outline:none;" />
+    </div>
+    <button onclick="saveWebApiKey()" style="background:var(--teal);color:white;border:none;border-radius:8px;padding:10px 18px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Save Key</button>
+    <span id="keySavedMsg" style="display:none;font-size:12px;font-weight:700;color:var(--green);">✓ Saved</span>
+  </div>
+
+
   <!-- LEFT: Input -->
   <div>
     <div class="card" style="margin-bottom:20px;">
@@ -782,9 +794,14 @@ async function callClaudeWithText(profileText) {
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': getWebApiKey(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
       max_tokens: 2000,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMsg }]
@@ -802,9 +819,14 @@ async function callClaudeWithLinkedIn(url) {
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': getWebApiKey(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
       max_tokens: 2000,
       system: SYSTEM_PROMPT,
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
@@ -827,9 +849,14 @@ async function callClaudeWithPDF(base64Data) {
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': getWebApiKey(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
       max_tokens: 2000,
       system: SYSTEM_PROMPT,
       messages: [{
@@ -1002,6 +1029,28 @@ function copyTags() {
     setTimeout(() => { btn.textContent = 'Copy to Clipboard'; btn.classList.remove('done'); }, 2500);
   });
 }
+
+  function saveWebApiKey() {
+    const key = document.getElementById('webApiKey').value.trim();
+    if (!key) return;
+    localStorage.setItem('he_api_key', key);
+    document.getElementById('keySavedMsg').style.display = '';
+    document.getElementById('apiKeyBanner').style.borderColor = 'var(--teal)';
+    setTimeout(() => { document.getElementById('keySavedMsg').style.display = 'none'; }, 2000);
+  }
+
+  function getWebApiKey() {
+    return localStorage.getItem('he_api_key') || document.getElementById('webApiKey').value.trim() || '';
+  }
+
+  // Load saved key on page load
+  window.addEventListener('load', () => {
+    const saved = localStorage.getItem('he_api_key');
+    if (saved) {
+      document.getElementById('webApiKey').value = saved;
+      document.getElementById('apiKeyBanner').style.borderColor = 'var(--teal)';
+    }
+  });
 </script>
 </body>
 </html>
