@@ -720,20 +720,45 @@ function switchTab(tab, btn) {
   document.getElementById('panel-' + tab).classList.add('active');
 }
 
-function handleFile(e) {
-  const f = e.target.files[0];
-  if (!f) return;
-  selectedFile = f;
-  document.getElementById('fileName').textContent = f.name;
-  document.getElementById('fileBadge').classList.add('show');
-  document.getElementById('analyzeUploadBtn').disabled = false;
+function handleFiles(e) {
+  const newFiles = Array.from(e.target.files);
+  newFiles.forEach(f => {
+    if (!selectedFiles.find(x => x.name === f.name)) selectedFiles.push(f);
+  });
+  document.getElementById('fileInput').value = '';
+  renderFileList();
 }
 
-function clearFile() {
-  selectedFile = null;
-  document.getElementById('fileInput').value = '';
-  document.getElementById('fileBadge').classList.remove('show');
-  document.getElementById('analyzeUploadBtn').disabled = true;
+function removeFile(name) {
+  selectedFiles = selectedFiles.filter(f => f.name !== name);
+  renderFileList();
+}
+
+function renderFileList() {
+  const container = document.getElementById('fileList');
+  container.innerHTML = '';
+  if (selectedFiles.length === 0) {
+    container.style.display = 'none';
+    document.getElementById('analyzeUploadBtn').disabled = true;
+    return;
+  }
+  container.style.display = 'flex';
+  selectedFiles.forEach(f => {
+    const icon = f.type === 'application/pdf' ? '📄' : f.name.toLowerCase().includes('transcript') || f.name.toLowerCase().includes('note') || f.name.toLowerCase().includes('call') ? '📝' : '📎';
+    const badge = document.createElement('div');
+    badge.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--teal-light);border:1px solid var(--teal-mid);border-radius:8px;font-size:12px;';
+    const nameSpan = document.createElement('span');
+    nameSpan.style.cssText = 'flex:1;color:var(--teal);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    nameSpan.textContent = icon + ' ' + f.name;
+    const removeBtn = document.createElement('span');
+    removeBtn.textContent = '✕';
+    removeBtn.style.cssText = 'cursor:pointer;color:var(--grey);font-size:14px;flex-shrink:0;';
+    removeBtn.addEventListener('click', () => removeFile(f.name));
+    badge.appendChild(nameSpan);
+    badge.appendChild(removeBtn);
+    container.appendChild(badge);
+  });
+  document.getElementById('analyzeUploadBtn').disabled = false;
 }
 
 const dz = document.getElementById('dropzone');
@@ -741,8 +766,11 @@ dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dra
 dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
 dz.addEventListener('drop', e => {
   e.preventDefault(); dz.classList.remove('drag-over');
-  const f = e.dataTransfer.files[0];
-  if (f) { selectedFile = f; document.getElementById('fileName').textContent = f.name; document.getElementById('fileBadge').classList.add('show'); document.getElementById('analyzeUploadBtn').disabled = false; }
+  const newFiles = Array.from(e.dataTransfer.files);
+  newFiles.forEach(f => {
+    if (!selectedFiles.find(x => x.name === f.name)) selectedFiles.push(f);
+  });
+  renderFileList();
 });
 
 function showLoading(msg) {
