@@ -614,20 +614,16 @@ textarea {
 
       <!-- Upload -->
       <div class="panel" id="panel-upload">
-        <label class="field-label">Resume File</label>
+        <label class="field-label">Documents &amp; Notes</label>
         <div class="dropzone" id="dropzone">
-          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt" onchange="handleFile(event)">
-          <div class="drop-icon">📄</div>
-          <div class="drop-text">Drop resume or click to browse</div>
-          <div class="drop-sub">PDF, DOC, DOCX, or TXT</div>
+          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt" multiple onchange="handleFiles(event)">
+          <div class="drop-icon">📎</div>
+          <div class="drop-text">Drop files or click to browse</div>
+          <div class="drop-sub">Resume, call transcript, notes — PDF, DOCX, or TXT · Multiple files OK</div>
         </div>
-        <div class="file-badge" id="fileBadge">
-          <span>📎</span>
-          <span class="file-badge-name" id="fileName"></span>
-          <span class="file-badge-remove" onclick="clearFile()">✕</span>
-        </div>
+        <div id="fileList" style="display:none;margin-top:10px;display:flex;flex-direction:column;gap:6px;"></div>
         <div class="error-bar" id="err-upload"></div>
-        <button class="btn btn-primary" id="analyzeUploadBtn" onclick="analyzeUpload()" disabled>Analyze Resume</button>
+        <button class="btn btn-primary" id="analyzeUploadBtn" onclick="analyzeUpload()" disabled>Analyze All Documents</button>
       </div>
     </div>
 
@@ -714,7 +710,7 @@ const EDTECH_COMPANIES = ["instructure","canvas","schoology","powerschool","rena
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let selectedTags = new Set();
-let selectedFile = null;
+let selectedFiles = []; // supports multiple files
 
 // ─── UI HELPERS ─────────────────────────────────────────────────────────────
 function switchTab(tab, btn) {
@@ -863,7 +859,7 @@ async function callClaudeWithPDF(base64Data) {
         role: 'user',
         content: [
           { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64Data } },
-          { type: 'text', text: `Analyze this resume and suggest tags from the following TAG TAXONOMY:\n${allTags}\n\nReturn only valid JSON as instructed.` }
+          { type: 'text', text: `Analyze this resume and suggest tags from the following TAG TAXONOMY:\n${allTags}${extraNote}\n\nReturn only valid JSON as instructed.` }
         ]
       }]
     })
@@ -905,22 +901,65 @@ async function analyzePaste() {
 }
 
 async function analyzeUpload() {
-  if (!selectedFile) return;
-  showLoading('Reading resume and analyzing...');
+  if (!selectedFiles.length) return;
+  showLoading(`Reading ${selectedFiles.length} document${selectedFiles.length > 1 ? 's' : ''} and analyzing...`);
   try {
+    // Collect all text content from all files
+    const textParts = [];
+    let pdfBase64 = null; // use first PDF found for native PDF reading if only one file
+
+    const pdfs = selectedFiles.filter(f => f.type === 'application/pdf');
+    const textFiles = selectedFiles.filter(f => f.type !== 'application/pdf');
+
+    // Label each document so Claude understands what it's reading
+    for (const f of textFiles) {
+      const label = f.name.toLowerCase().includes('transcript') || f.name.toLowerCase().includes('note') || f.name.toLowerCase().includes('call')
+        ? 'CALL NOTES / TRANSCRIPT'
+        : 'RESUME / PROFILE';
+      const text = await f.text();
+      textParts.push(`--- ${label}: ${f.name} ---
+${text}`);
+    }
+
     let result;
-    if (selectedFile.type === 'application/pdf') {
+
+    if (pdfs.length === 1 && textFiles.length === 0) {
+      // Single PDF — use native PDF reading
       const base64 = await new Promise((res, rej) => {
         const r = new FileReader();
         r.onload = () => res(r.result.split(',')[1]);
         r.onerror = rej;
-        r.readAsDataURL(selectedFile);
+        r.readAsDataURL(pdfs[0]);
       });
       result = await callClaudeWithPDF(base64);
+    } else if (pdfs.length > 0) {
+      // Multiple files including PDFs — extract PDF text and combine
+      for (const pdf of pdfs) {
+        const base64 = await new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result.split(',')[1]);
+          r.onerror = rej;
+          r.readAsDataURL(pdf);
+        });
+        // Send each PDF individually to extract text, then combine
+        textParts.unshift(`--- RESUME / PROFILE: ${pdf.name} ---
+[PDF — analyzed separately]`);
+        // For multi-file with PDFs, we send everything to callClaudeWithText using the PDF as primary
+        const pdfResult = await callClaudeWithPDF(base64, textParts.join('
+
+'));
+        result = pdfResult;
+        break; // Use first PDF as anchor, notes already passed in
+      }
     } else {
-      const text = await selectedFile.text();
-      result = await callClaudeWithText(text);
+      // All text files
+      result = await callClaudeWithText(textParts.join('
+
+---
+
+'));
     }
+
     renderResults(result);
   } catch (e) {
     hideLoading();
