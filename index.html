@@ -257,12 +257,363 @@ const BLOCKED = new Set(["Red Flag","Unplaceable","Placed Candidate","BIPOC","WW
 
 const SYSTEM_PROMPT = `You are a recruitment data assistant for HireEducation, a specialist EdTech sales recruiter. Analyze candidate profiles and suggest Crelate CRM tags.
 
-Return ONLY valid JSON. No markdown, no preamble. Only suggest tags from the provided TAG TAXONOMY. Never suggest: Red Flag, Unplaceable, Placed Candidate, any conference/event tags, or diversity/personal flags (BIPOC, WW, FF, MPC, TFA).
+Return ONLY valid JSON. No markdown, no preamble. Only suggest tags from the TAG TAXONOMY provided in each request. Never suggest: Red Flag, Unplaceable, Placed Candidate, any conference/event tags (ISTE, SXSW, ASU-GSV, EDUCAUSE, CAEL etc.), or personal/diversity flags (BIPOC, WW, FF, MPC, TFA).
 
 Confidence levels:
-- "high": directly inferred from job title or known EdTech company name
-- "medium": inferred from context, recruiter should verify
-- "confirm": cannot be inferred from profile alone
+- "high": directly and clearly inferred from job title or known EdTech company name
+- "medium": reasonably inferred from context — recruiter should verify
+- "confirm": cannot be inferred from a profile alone (status, availability, compensation, district relationship depth)
+
+TAG DEFINITIONS — use these to choose the most accurate tags:
+- Applied: Candidate has been submitted or applied to an active search
+- Bilingual: Candidate is professionally fluent in English and at least one other language, but the specific language has not yet been identified or confirmed
+- Bilingual - Arabic: Candidate is professionally fluent in English and Arabic
+- Bilingual - Chinese: Candidate is professionally fluent in English and Chinese (Mandarin or Cantonese)
+- Bilingual - French: Candidate is professionally fluent in English and French
+- Bilingual - German: Candidate is professionally fluent in English and German
+- Bilingual - Italian: Candidate is professionally fluent in English and Italian
+- Bilingual - Japanese: Candidate is professionally fluent in English and Japanese
+- Bilingual - Korean: Candidate is professionally fluent in English and Korean
+- Bilingual - Russian: Candidate is professionally fluent in English and Russian
+- Bilingual - Spanish: Candidate is professionally fluent in English and Spanish
+- BIPOC: Candidate self-identifies as Black, Indigenous, or a person of color
+- Cannot Find: All reasonable sourcing efforts have been exhausted and the recruiter cannot locate updated contact information or a current profile for this candidate
+- FF: Stands for Friends and Family
+- Former Administrator: Candidate previously held an administrative leadership role in an educational institution (K12, higher ed, or early childhood) but has since transitioned out of that role
+- Former Administrator - EC: Candidate previously held an administrative leadership role specifically in early childhood education (preschool, Head Start, childcare centers)
+- Former Administrator - HE: Candidate previously held an administrative leadership role in higher education (e.g., dean, registrar, VP of enrollment, provost)
+- Former Administrator - K12: Candidate previously held an administrative leadership role in K12 (e.g., principal, assistant principal, district administrator, superintendent)
+- Former Educator: Candidate was previously a classroom teacher, professor, or instructional coach in an educational setting but has since moved into a non-teaching role
+- Former Educator - HE: Candidate was previously a professor, lecturer, or instructional faculty member at a college or university
+- Former Educator - K12: Candidate was previously a classroom teacher or instructional coach in a K12 setting
+- Former Superintendent: Candidate previously served as a school district superintendent
+- Fractional: Candidate is open to or currently working in a fractional (part-time, project-based executive) capacity rather than full-time employment
+- MPC: Stands for Most Placeable Candidate
+- Needs Visa Sponsorship: Candidate requires employer-sponsored work authorization (e.g., H-1B, OPT extension, or similar)
+- Part-Time: Candidate is only available for or interested in part-time employment
+- Placed Candidate: Candidate has been successfully placed in a role through this recruiting team
+- Publishing Lifer: Candidate has spent the majority of their career in the traditional educational publishing industry (e.g., Pearson, McGraw-Hill, Houghton Mifflin)
+- Red Flag: Recruiter or team member has identified a concern about this candidate that warrants caution before further advancement
+- Retired: Candidate has formally retired from their primary career but may be open to consulting, fractional, board, or advisory roles
+- Self-Employed: Candidate is currently running their own business, working as an independent consultant, or freelancing full-time
+- Startup Company: Candidate currently works at or has significant experience at an early-stage startup (typically Series B or earlier)
+- TFA: Candidate is a Teach For America alumni
+- Unplaceable: Recruiter has determined this candidate cannot be placed through this firm, for reasons such as compensation expectations far outside market range, behavioral issues, geographic limitations, or a profile that does not match any current or foreseeable client need
+- WW: Stands for Willing to Work or Willing and Waiting, used to flag candidates who are actively available and interested in opportunities right now
+- Computer Science: Candidate has subject matter expertise in computer science education, including coding, computational thinking, data structures, or CS curriculum design
+- Core Curriculum: Candidate specializes in foundational academic subjects (typically ELA, math, science, and social studies) rather than electives or supplemental programs
+- Creative Arts: Candidate has expertise in arts education including visual arts, music, theater, or dance
+- CTE: Stands for Career and Technical Education
+- ELA/Humanities: Candidate specializes in English Language Arts and/or humanities subjects including literature, writing, and reading instruction
+- Engineering: Candidate has subject matter expertise in engineering education or STEM-integrated engineering curriculum (e.g., Project Lead The Way, robotics)
+- History/Social Studies: Candidate specializes in history, civics, geography, or social studies curriculum and instruction
+- Intervention: Candidate has expertise in academic intervention programs designed to support students who are below grade level or at risk
+- Language Learning: Candidate has expertise in second language acquisition, world language instruction, ESL/ELL programs, or language learning technology
+- Literacy/Writing: Candidate specializes in literacy instruction, reading development, or writing curriculum
+- Math: Candidate has subject matter expertise in math education, from foundational numeracy to advanced mathematics
+- Mental Healthcare: Candidate has expertise in school-based mental health services, counseling, or social-emotional support
+- Nursing: Candidate has expertise in nursing education, either as an educator in nursing programs or in clinical training contexts
+- Science: Candidate has subject matter expertise in science education including biology, chemistry, physics, earth science, or NGSS-aligned instruction
+- SEL/MTSS: Candidate has expertise in Social Emotional Learning and/or Multi-Tiered Systems of Support frameworks
+- STEM/STEAM: Candidate has expertise in integrated STEM or STEAM (Science, Technology, Engineering, Arts, Math) education
+- Supplemental: Candidate has expertise in supplemental educational programs or products that support core instruction without replacing it (e.g., tutoring platforms, after-school enrichment, practice tools)
+- 2024 CAEL Speakers: Candidate spoke at the 2024 CAEL (Council for Adult and Experiential Learning) conference
+- AACRAO SEM 2024: Candidate attended or presented at the 2024 AACRAO Strategic Enrollment Management conference
+- AIR Show 2024: Candidate attended the 2024 AIR (Association for Institutional Research) Forum
+- ASU-GSV 2024: Candidate attended the 2024 ASU+GSV Summit, a premier edtech and innovation in education conference
+- ASU-GSV 2025: Candidate attended the 2025 ASU+GSV Summit
+- ASU-GSV 2026: Candidate is registered for or attended the 2026 ASU+GSV Summit
+- CAEL 2024: Candidate attended the 2024 CAEL (Council for Adult and Experiential Learning) annual conference
+- EdTech Week 2023: Candidate attended EdTech Week 2023, an event focused on education technology trends and networking
+- EdTech Week 2024: Candidate attended EdTech Week 2024
+- EdTech Week 2025: Candidate attended EdTech Week 2025
+- EDUCAUSE 2023: Candidate attended the 2023 EDUCAUSE Annual Conference, the leading event for higher education IT professionals
+- EDUCAUSE 2025: Candidate attended the 2025 EDUCAUSE Annual Conference
+- GSV 50: Candidate is recognized on or connected to the GSV 50, a list of the most notable people in the education sector
+- GSV Cup 2024: Candidate participated in or attended the 2024 GSV Cup, a pitch competition for edtech startups
+- GSV-150 2024: Candidate is recognized on or connected to the 2024 GSV 150 list, which tracks emerging leaders in the edtech sector
+- GSV-150 2025: Candidate is recognized on or connected to the 2025 GSV 150 list
+- ISTE 2024: Candidate attended the 2024 ISTE (International Society for Technology in Education) conference
+- ISTE 2025: Candidate attended the 2025 ISTE conference
+- MagPath 2024: Candidate attended or is associated with MagPath 2024, an event focused on magnet schools and choice programs
+- MassCue: Candidate is a member of or active participant in MassCue (Massachusetts Computer Using Educators), a regional edtech and instructional technology professional organization
+- MassCue 2025: Candidate attended the 2025 MassCue conference
+- NAEYC 2024: Candidate attended the 2024 NAEYC (National Association for the Education of Young Children) Annual Conference
+- SXSW 2023: Candidate attended SXSW EDU 2023, the education track of the South by Southwest festival focused on innovation in learning
+- SXSW 2024: Candidate attended SXSW EDU 2024
+- SXSW 2025: Candidate attended SXSW EDU 2025
+- SXSW 2026: Candidate attended or is registered for SXSW EDU 2026
+- Transcend Fellow 2024: Candidate is a 2024 Transcend Fellow, part of the Transcend Education network focused on reimagining school design and education systems
+- Corporate Learning Products & Services: Candidate has primary experience in the corporate learning and development market, including learning management systems, employee training platforms, talent development tools, or L&D consulting outside of K12 and higher ed
+- Government / Policy: Candidate works or has worked primarily in government agencies, legislative bodies, or education policy organizations rather than in schools or edtech companies
+- HR Tech: Candidate has experience in the human resources technology sector, including talent management software, HRIS systems, recruiting platforms, or workforce analytics tools
+- Investments: Candidate works or has worked in investment, venture capital, or private equity, particularly in funds focused on edtech, education services, or adjacent sectors
+- Legal: Candidate has experience in legal functions within an organization, such as general counsel, contracts, compliance, or intellectual property
+- Management Consultant: Candidate has a primary background in management consulting (e.g., McKinsey, Bain, Deloitte, or boutique strategy firms), often working across education or edtech clients
+- Marketing: Candidate has experience in marketing functions
+- Nonprofit: Candidate has experience selling to nonprofit organizations, including education-focused nonprofits, foundations, or mission-driven organizations
+- Out of Ed Industry: Candidate has experience selling outside of the education industry, to corporate, consumer, or other non-education markets
+- PK-20 Education Products & Services: Candidate has experience in companies that sell products or services directly into the PreK through post-secondary education market
+- Publishing: Candidate has a background primarily in educational publishing (print or digital), including textbook publishers, curriculum houses, or academic journal publishers
+- Recruitment / Talent: Candidate works or has worked primarily in the talent acquisition, recruiting, or human capital industry
+- School - Charter School: Candidate currently works at or has primary experience in charter schools
+- School - Early Childhood: Candidate currently works at or has primary experience in early childhood education settings (preschool, Head Start, childcare, pre-K programs)
+- School - HE: Candidate currently works at or has primary experience in higher education institutions (colleges, universities, community colleges)
+- School - K12: Candidate currently works at or has primary experience in K12 schools or school districts
+- School - K12 After-School Programs: Candidate has experience in K12 after-school or extended learning programs, such as 21st Century Community Learning Centers or enrichment programs
+- School - K12 Online: Candidate has experience in online or virtual K12 schools or programs, including full-time virtual schools or hybrid models
+- School - Online: Candidate has experience in online education broadly, including online higher ed programs, online course providers, or virtual learning environments
+- Security: Candidate has experience in cybersecurity, physical security, or school safety products and services
+- Service Providers: Candidate works or has worked for companies providing services (as opposed to software products) to educational institutions, such as managed services, staffing, consulting, or facilities management
+- Tech/Software - General: Candidate has a background in technology or software companies that are not specifically focused on education
+- Administration - PK-20 Schools: Candidate has experience in administrative functions within educational institutions across the PK-20 spectrum, including operations, finance, registrar, facilities, or student services
+- Admissions: Candidate has experience in college or university admissions operations, including application review, enrollment counseling, outreach to prospective students, or admissions technology
+- Channel Sales: Candidate has experience managing relationships with resellers, distributors, or channel partners to drive product sales indirectly
+- Communications: Candidate has experience in organizational communications, including internal communications, PR, media relations, or external messaging strategy
+- Creative: Candidate has a background in creative roles that do not fit neatly into Media or Writing sub-categories (e.g., art direction, creative strategy, UX writing)
+- Creative - Media: Candidate has experience in media production, video creation, multimedia content, or digital media
+- Creative - Writing: Candidate has experience as a professional writer, content creator, copywriter, or editor
+- Curriculum & Instructional Design: Candidate has experience designing, developing, or reviewing curriculum and instructional materials for educational settings
+- Customer Experience: Candidate has experience in roles focused on the overall quality of customer interactions, often at a strategic or leadership level
+- Customer Success: Candidate has experience in post-sale account management focused on ensuring customers achieve their desired outcomes with a product or service
+- Customer Support: Candidate has experience in frontline customer service, help desk, or technical support functions
+- Data Analytics: Candidate has experience analyzing data to generate insights, build dashboards, or inform decision-making
+- DEI: Candidate has experience in diversity, equity, and inclusion roles or programs
+- Dept Edu - Federal: Candidate has experience working within the U.S
+- Dept Edu - State: Candidate has experience working within a state-level Department of Education, including curriculum standards, school accountability, or state grant administration
+- Dept Edu - Urban: Candidate has experience working within a large urban school district's central office or a city-level education authority, such as the NYC DOE or LAUSD
+- Education Policy: Candidate has experience working in education policy, whether in government, think tanks, advocacy organizations, or policy-focused nonprofits
+- Event Management: Candidate has experience planning and executing events, including conferences, trade shows, user groups, or webinars
+- Finance: Candidate has experience in financial functions including accounting, FP&A, financial reporting, or budgeting
+- Financial Services: Candidate has experience in financial services related to education, such as student loan products, tuition payment plans, financial aid technology, or institutional banking for higher ed
+- Fundraising: Candidate has experience selling fundraising platforms or services to schools, districts, or educational nonprofits, including online giving tools, crowdfunding platforms, or development software
+- Graphic Design: Candidate has experience as a professional graphic designer, creating visual assets for marketing, product, or educational materials
+- GTM: Stands for Go-To-Market
+- Human Resources: Candidate has experience in HR functions including recruiting, employee relations, compensation, benefits, or HR operations
+- Implementation: Candidate has experience managing the onboarding and deployment of software or educational programs for new customers
+- Investor: Candidate serves or has served as an investor, providing capital to companies in exchange for equity
+- IT: Candidate has experience in general information technology functions including infrastructure, systems administration, help desk, or technology operations
+- IT/DevOps: Candidate has experience specifically in DevOps, software infrastructure, CI/CD pipelines, or cloud operations
+- IT/Systems: Candidate has experience managing enterprise systems and technology infrastructure, including ERP, SIS, LMS, or other institutional software platforms
+- Management: Candidate has experience managing teams or departments
+- Market Research: Candidate has experience conducting market research, competitive intelligence, or customer insights work
+- Marketing - Brand: Candidate has experience in brand marketing, including brand strategy, identity development, brand guidelines, and brand-level campaigns
+- Marketing - Content: Candidate has experience in content marketing, including blog posts, white papers, case studies, email campaigns, and content strategy
+- Marketing - DemandGen: Candidate has experience in demand generation, including paid media, lead generation campaigns, marketing automation, and pipeline contribution
+- Marketing - Digital: Candidate has experience in digital marketing broadly, including SEO, SEM, social media, email marketing, or digital advertising
+- Marketing - Events: Candidate has experience in event marketing, including trade show strategy, conference sponsorship, and event-driven pipeline generation
+- Marketing - PR: Candidate has experience in public relations, media relations, earned media strategy, or communications
+- Marketing - Product: Candidate has experience in product marketing, including positioning, messaging, competitive analysis, sales enablement content, and launch strategy
+- Mergers & Acquisitions: Candidate has experience in M&A processes including due diligence, deal structuring, integration planning, or corporate development
+- Office Management: Candidate has experience managing office operations, administrative support, facilities coordination, or executive assistance
+- Operations: Candidate has experience in business operations, including process improvement, cross-functional coordination, or operational strategy
+- Operations - Supply Chain: Candidate has experience in supply chain management, procurement, logistics, or inventory management
+- Partnerships: Candidate has experience in partnership development, including channel partnerships, strategic alliances, integration partnerships, or co-marketing relationships
+- Procurement: Candidate has experience in institutional or corporate procurement, including vendor selection, RFP processes, contract negotiations, and purchasing operations
+- Product Development: Candidate has experience in product development, including product roadmap execution, engineering collaboration, and new feature delivery
+- Product Management: Candidate has experience in product management, including roadmap prioritization, user research, market requirements, and cross-functional leadership of product development
+- Professional Development: Candidate has experience selling professional development products or services to educators or institutional buyers, including PD platforms, coaching programs, instructional coaching tools, or teacher training content
+- Program Management: Candidate has experience managing programs, including multi-workstream initiatives, grant-funded projects, or institutional programs with defined outcomes and stakeholders
+- Project Management: Candidate has experience managing discrete projects with defined scopes, timelines, and deliverables
+- Proposals/Grants: Candidate has experience writing or managing proposals and grants, including RFP responses, federal and state grant applications, or foundation funding requests
+- Quality Assurance: Candidate has experience in quality assurance, including software testing, curriculum review, content quality processes, or QA program management
+- Research: Candidate has experience in academic, policy, or market research, including study design, data collection, and analysis
+- Revenue Operations: Candidate has experience in revenue operations (RevOps), including CRM management, sales process design, forecasting, pipeline analytics, and cross-functional alignment between sales, marketing, and customer success
+- Sales: Candidate has experience in sales, including prospecting, pipeline management, closing, and quota attainment
+- Sales Enablement: Candidate has experience in sales enablement, including training salespeople, building playbooks, developing sales tools and content, and improving sales productivity
+- Sales Operations: Candidate has experience in sales operations, including CRM administration, territory planning, quota setting, sales reporting, and process optimization
+- Services: Candidate has experience selling professional services, managed services, or consulting engagements rather than software products
+- Software Engineering: Candidate has experience as a software engineer, developer, or architect
+- Student Success: Candidate has experience selling student success platforms, including early alert systems, advising tools, retention software, or student engagement platforms designed to improve persistence and completion in higher ed or K12
+- Talent Acquisition: Candidate has experience specifically in recruiting and talent acquisition, including sourcing, interviewing, and hiring processes
+- Tech Support: Candidate has experience in technical support, including troubleshooting software, supporting end users, or managing IT help desk functions
+- Technical: Candidate has a technical background that does not fit neatly into Software Engineering or IT sub-categories, such as technical architecture, systems integration, or technical program management
+- UI/UX: Candidate has experience in user interface and user experience design, including wireframing, prototyping, user research, and interaction design
+- Account Executive: Candidate holds or has held an Account Executive title, typically responsible for closing new business and managing a quota
+- Account Manager: Candidate holds or has held an Account Manager title, typically responsible for maintaining and growing existing customer relationships post-sale
+- Admin: Candidate holds or has held an administrative support role, such as administrative assistant, office coordinator, or executive assistant
+- Advisor: Candidate currently serves or has served in an advisory capacity, providing strategic guidance without a full-time operational role
+- Assistant: Candidate is at an entry-level or junior support level, typically assisting a more senior professional
+- Associate: Candidate holds or has held an Associate-level title, typically the first or second rung above entry-level
+- BDR: Stands for Business Development Representative
+- Board Member: Candidate serves or has served on a board of directors or advisory board
+- C-Level: Candidate holds or has held a C-suite title
+- CAO: Stands for Chief Academic Officer or Chief Administrative Officer
+- CEO: Candidate holds or has held the CEO title
+- CFO: Candidate holds or has held the CFO title
+- CGO: Stands for Chief Growth Officer
+- Channel Sales Manager: Candidate holds or has held a Channel Sales Manager title, responsible for managing indirect sales through reseller or partner channels
+- Chief of Staff: Candidate holds or has held a Chief of Staff role, typically serving as a senior operational and strategic partner to a C-level executive
+- CHRO: Stands for Chief Human Resources Officer
+- CIO: Stands for Chief Information Officer
+- CLO: Stands for Chief Learning Officer
+- CMO: Stands for Chief Marketing Officer
+- Coach: Candidate works or has worked as a professional coach, including executive coach, instructional coach, or career coach
+- Consultant: Candidate works or has worked primarily as an independent consultant or at a consulting firm
+- Content Manager: Candidate holds or has held a Content Manager title, responsible for managing a content pipeline, editorial calendar, or team of writers and creators
+- Controller: Candidate holds or has held a Controller title, responsible for overseeing accounting operations, financial reporting, and compliance
+- COO/GM/President: Candidate holds or has held a Chief Operating Officer, General Manager, or President title, responsible for day-to-day operational leadership of a company or business unit
+- Coordinator: Candidate holds or has held a Coordinator title, typically an entry-to-mid-level role responsible for organizing and supporting programs, events, or operations
+- CPO: Stands for Chief Product Officer
+- CRO: Stands for Chief Revenue Officer
+- CTO/VP Engineering: Candidate holds or has held a Chief Technology Officer or VP of Engineering title, responsible for technology strategy, engineering team leadership, and technical architecture
+- Curriculum Developer: Candidate holds or has held a Curriculum Developer title, responsible for creating, writing, or designing instructional content and learning materials
+- CXO: Stands for Chief Experience Officer or Chief (fill-in) Officer used as a catch-all
+- Data Analyst: Candidate holds or has held a Data Analyst title, responsible for querying, cleaning, and analyzing data to produce reports and insights
+- Dean: Candidate holds or has held a Dean title in higher education, responsible for academic and administrative oversight of a college, school, or division within a university
+- Director: Candidate holds or has held a Director title
+- Editor: Candidate holds or has held an Editor title, responsible for reviewing, revising, and publishing written or multimedia content
+- Founder: Candidate has founded a company
+- Government Sales: Candidate holds or has held a Government Sales title, focused on selling to government agencies, public institutions, or SLED (State, Local, and Education) buyers
+- Hiring Manager: Candidate currently serves as a hiring manager, meaning they have authority over headcount decisions and are a decision-maker in the recruiting process
+- Individual Contributor: Candidate is currently or was recently working as an individual contributor without direct reports
+- Inside Sales Manager: Candidate holds or has held an Inside Sales Manager title, responsible for leading a team of inside sales reps or SDRs
+- Internal Recruiter: Candidate works or has worked as an internal (in-house) recruiter within a company rather than at a recruiting agency
+- Leadership - Nonprofit: Candidate holds or has held a leadership role (director level or above) in a nonprofit organization
+- Lobbyist: Candidate works or has worked as a lobbyist or government affairs professional, advocating for policy positions on behalf of organizations before legislative or regulatory bodies
+- Manager: Candidate holds or has held a Manager title with direct people management responsibility
+- Owner: Candidate owns or has owned a business
+- Player/Coach: Candidate is in or has been in a role that combines individual contribution with team leadership, i.e., they are both doing the work and managing others
+- Principal: Candidate holds or has held a Principal title
+- Program Manager: Candidate holds or has held a Program Manager title, responsible for overseeing a defined program with ongoing deliverables, stakeholders, and outcomes
+- Project Manager: Candidate holds or has held a Project Manager title, responsible for scoping, planning, and delivering discrete projects on time and within budget
+- Recruiter: Candidate works or has worked as a recruiter, either internally or at an agency
+- Rep: Candidate holds or has held a Rep (Representative) title in sales, often at an entry-to-mid level
+- RFP Writer: Candidate has experience writing formal RFP (Request for Proposal) responses or proposals for institutional clients
+- Sales Manager: Candidate holds or has held a Sales Manager title, responsible for managing a team of account executives or sales representatives and driving team quota attainment
+- SDR: Stands for Sales Development Representative
+- Senior Manager: Candidate holds or has held a Senior Manager title, typically one level above Manager and below Director
+- Software Engineer: Candidate holds or has held a Software Engineer title, responsible for writing and maintaining code
+- Solutions Architect: Candidate holds or has held a Solutions Architect title, responsible for designing technical solutions and advising customers on how to implement software to meet their needs
+- Solutions Engineer: Candidate holds or has held a Solutions Engineer title, often in a pre-sales capacity, responsible for technical demonstrations, proof-of-concept work, and answering technical questions during the sales process
+- Specialist: Candidate holds or has held a Specialist title, indicating deep expertise in a defined area
+- Superintendent: Candidate holds or has held a school district Superintendent title, the top executive role in a K12 school district
+- Teacher/Professor/Instructor: Candidate holds or has held a teaching, faculty, or instructional role in a K12 or higher education setting
+- VP: Candidate holds or has held a Vice President title
+- B2B: Candidate has experience selling to other businesses rather than individual consumers
+- B2C: Candidate has experience selling directly to individual consumers, such as students, parents, or individual educators purchasing on their own behalf
+- C-Suite - CTO: Candidate has experience selling specifically to Chief Technology Officers
+- Corporate: Candidate has experience selling into corporate or enterprise business accounts, as opposed to government or education institutions
+- Corporate - C-Suite: Candidate has experience selling to C-level executives in corporate environments
+- Early Childhood - Daycares: Candidate has experience selling to or working with daycare centers and childcare providers
+- Early Childhood - Head Start Programs: Candidate has experience selling to or working with Head Start and Early Head Start programs
+- Early Childhood - Preschools: Candidate has experience selling to or working with preschool programs, including private preschools and publicly funded pre-K
+- EdTech: Candidate has experience selling to or within the edtech industry itself, such as selling software to edtech companies or selling within the edtech vendor community
+- Government: Candidate has experience selling to government buyers broadly, including federal, state, and local agencies
+- Govt. - Federal: Candidate has experience selling to federal government agencies, including U.S
+- Govt. - Municipalities: Candidate has experience selling to municipal governments, including city and county agencies that fund or operate local education and workforce programs
+- HE: Candidate has experience selling to higher education institutions broadly
+- HE - Admissions: Candidate has experience selling specifically to admissions offices, enrollment management teams, or recruitment functions within colleges and universities
+- HE - C-Suite: Candidate has experience selling to the C-suite of higher education institutions, including presidents, provosts, VPs, and other top administrators
+- HE - Campus-Level: Candidate has experience selling to campus-level buyers (e.g., department heads, deans, academic programs) rather than central administration in higher ed
+- HE - Community Colleges: Candidate has experience selling specifically to community colleges, which have distinct budget structures, student demographics, and decision-making processes compared to four-year institutions
+- HE - Faculty: Candidate has experience selling to or engaging faculty as the primary buyer or influencer in higher education
+- HE - Marketing: Candidate has experience selling to marketing and communications teams within higher education institutions, such as enrollment marketing offices or university communications departments
+- HE - Med Schools: Candidate has experience selling specifically to medical schools and health sciences programs within universities
+- HE - Private: Candidate has experience selling specifically to private (nonprofit or for-profit) colleges and universities, as distinct from public institutions
+- HE - Provosts: Candidate has experience selling specifically to provosts or chief academic officers in higher education
+- HE - Registrar: Candidate has experience selling to registrar offices in higher education, typically relevant for student information systems, transcript services, or enrollment technology
+- HE - ResLife: Candidate has experience selling to residential life or housing offices in higher education
+- HE - Systems: Candidate has experience selling to multi-campus university systems (e.g., University of California system, SUNY) rather than individual institutions
+- Healthcare: Candidate has experience selling to healthcare organizations broadly
+- Healthcare - C-Suite: Candidate has experience selling to C-level executives in healthcare organizations, including CEOs, CMOs, or CNOs of health systems
+- Healthcare - Systems: Candidate has experience selling to large healthcare systems with multiple facilities or hospital networks, as distinct from individual providers
+- K12: Candidate has experience selling to K12 education broadly
+- K12 - C-Suite: Candidate has experience selling to district-level C-suite executives in K12, including superintendents, chief academic officers, or chief operating officers of school districts
+- K12 - Charter: Candidate has experience selling specifically to charter schools or charter management organizations, which have distinct governance and purchasing structures from traditional public schools
+- K12 - District-level: Candidate has experience selling to district administration rather than individual schools
+- K12 - DOE: Candidate has experience selling to or working with state departments of education on K12 initiatives
+- K12 - Faculty: Candidate has experience selling to teachers and instructional staff as primary buyers or influencers within K12
+- K12 - High Schools: Candidate has experience selling specifically to high schools or secondary education programs, particularly relevant for college readiness, career pathways, or dual enrollment products
+- K12 - Large Districts: Candidate has experience selling to large school districts (typically those with 10,000 or more students), which involve more complex procurement, longer sales cycles, and larger contract values than smaller districts
+- K12 - Private: Candidate has experience selling specifically to private K12 schools, which have different budget structures and decision-making processes than public schools
+- K12 - School-Level: Candidate has experience selling to individual school-level buyers (principals, instructional coaches, school-based teams) rather than district administration
+- K12 - Systems: Candidate has experience selling to multi-district or state-level K12 systems, or large charter management organizations operating across many schools
+- Libraries - Public: Candidate has experience selling to or working with public library systems
+- Libraries - School: Candidate has experience selling to school libraries or library media specialists in K12
+- Mid-Market: Candidate has experience selling to mid-market organizations, typically defined as institutions or companies with moderate size and budget, between small/individual buyers and large enterprise accounts
+- SLED: Stands for State, Local, and Education
+- SLED - Education: Candidate has experience selling specifically to educational institutions within the SLED market
+- SLED - Local: Candidate has experience selling to local government agencies (cities, counties, municipalities) within the SLED market
+- SLED - State: Candidate has experience selling to state government agencies within the SLED market, including state education departments or state-level offices
+- .NET: Candidate has professional development experience with the .NET framework, including C# or VB.NET applications
+- Agile/SCRUM: Candidate has experience working in Agile or Scrum development environments, including sprint planning, standups, retrospectives, and iterative product delivery
+- AJAX: Candidate has professional experience with AJAX (Asynchronous JavaScript and XML) for building dynamic web applications
+- Angular: Candidate has professional experience with Angular, a front-end JavaScript framework
+- ASP.NET: Candidate has professional experience with ASP.NET for building web applications on the Microsoft stack
+- AWS Cloud: Candidate has professional experience with Amazon Web Services cloud infrastructure, including services such as EC2, S3, Lambda, or RDS
+- Azure Cloud: Candidate has professional experience with Microsoft Azure cloud platform
+- Bootstrap: Candidate has professional experience with Bootstrap, the front-end CSS framework
+- C: Candidate has professional programming experience in the C language
+- C#: Candidate has professional programming experience in C#, commonly used in .NET development and game development
+- C++: Candidate has professional programming experience in C++, used in systems programming, game development, and performance-critical applications
+- CSS: Candidate has professional experience with CSS for styling web applications
+- Docker: Candidate has professional experience with Docker for containerization and application deployment
+- Git: Candidate has professional experience with Git for version control and source code management
+- HTML: Candidate has professional experience with HTML for structuring web content
+- HTML5: Candidate has professional experience specifically with HTML5, including semantic markup, canvas, and modern browser APIs
+- iOS: Candidate has professional experience developing applications for the iOS platform (iPhone and iPad)
+- Java: Candidate has professional programming experience in Java
+- JavaScript: Candidate has professional experience with JavaScript for front-end or full-stack web development
+- Jenkins: Candidate has professional experience with Jenkins for continuous integration and automated deployment pipelines
+- MongoDB: Candidate has professional experience with MongoDB, a NoSQL document database
+- MVC: Candidate has professional experience with the Model-View-Controller architectural pattern, commonly used in web application development
+- MySQL: Candidate has professional experience with MySQL relational database management
+- Node.js: Candidate has professional experience with Node.js for server-side JavaScript development
+- PHP: Candidate has professional programming experience with PHP for server-side web development
+- Python: Candidate has professional programming experience with Python
+- React: Candidate has professional experience with React, the JavaScript library for building user interfaces
+- RestAPI: Candidate has professional experience designing or consuming RESTful APIs
+- Salesforce: Candidate has professional experience with Salesforce, including CRM administration, Salesforce development (Apex, Visualforce, Lightning), or Salesforce integration
+- SQL: Candidate has professional experience writing SQL queries for data retrieval, reporting, or database management
+- Swift: Candidate has professional programming experience with Swift, Apple's language for iOS and macOS development
+- Typescript: Candidate has professional experience with TypeScript, a typed superset of JavaScript
+- Vue: Candidate has professional experience with Vue.js, a progressive JavaScript framework for building user interfaces
+- Waterfall: Candidate has experience working in Waterfall software development methodology, with sequential phases of planning, development, and delivery
+- XML: Candidate has professional experience with XML for data exchange, configuration, or document structuring
+- Academic Products: Candidate has experience selling academic content, research tools, or curriculum products used directly in academic instruction, such as textbooks, journals, or academic databases
+- Administrative Products: Candidate has experience selling software or tools that support school or district administration, such as HR systems, financial management platforms, or operations software for educational institutions
+- After School Programs: Candidate has experience selling or operating after-school enrichment, tutoring, or extended learning programs
+- AI: Candidate has experience selling AI-powered products or solutions, including adaptive learning, generative AI tools, predictive analytics, or AI-driven personalization in education or enterprise contexts
+- Assessments: Candidate has experience selling assessment products, including formative assessments, summative tests, diagnostic tools, benchmark assessments, or standardized testing platforms for K12 or higher ed
+- Books: Candidate has experience selling physical or digital books, including textbooks, trade books, supplemental reading, or educational reference materials
+- Camps: Candidate has experience selling or operating educational camps, including summer learning programs, STEM camps, coding bootcamps, or enrichment programs in a camp format
+- College Readiness: Candidate has experience selling products or services that prepare students for college, including college counseling tools, SAT/ACT prep, FAFSA guidance, dual enrollment programs, or college application platforms
+- Cybersecurity: Candidate has experience selling cybersecurity products or services to educational institutions, including network security, identity management, data privacy compliance, or endpoint protection in school and university environments
+- Data Systems: Candidate has experience selling data management and analytics systems to educational institutions, such as student information systems with robust reporting, institutional research tools, or education data platforms
+- Education: Candidate has experience selling broadly in the education market
+- Education - Global Studies: Candidate has experience selling education products or services focused on global studies, international education, or cross-cultural learning programs
+- eLearning: Candidate has experience selling online learning platforms, digital courseware, or eLearning content for K12, higher ed, or corporate training markets
+- Enrollment Mgmt: Candidate has experience selling enrollment management solutions to colleges and universities, including CRM systems for admissions, yield management tools, financial aid optimization, or enrollment analytics platforms
+- Finances and Fees: Candidate has experience selling financial management or fee collection products to educational institutions, including tuition payment platforms, school fee management software, or financial clearance tools
+- Games: Candidate has experience selling educational games or game-based learning products, including digital games, gamification platforms, or game-based assessment tools for K12 or higher ed
+- Grading and Attendance: Candidate has experience selling grading, attendance tracking, or gradebook software to K12 or higher ed institutions, including standalone tools or modules within larger SIS or LMS platforms
+- Hardware: Candidate has experience selling physical hardware to educational institutions, including devices, classroom technology, or infrastructure equipment
+- Hardware - Smart Boards: Candidate has experience selling interactive whiteboards or smart board technology to K12 classrooms or higher ed institutions
+- Insurance: Candidate has experience selling insurance products to educational institutions or in education-adjacent markets, such as student health insurance, school district liability coverage, or educator professional liability
+- Interoperability: Candidate has experience selling data interoperability solutions, including tools that enable systems (SIS, LMS, assessment platforms) to share data using standards like Ed-Fi, IMS Global, or CASE
+- Job Search: Candidate has experience selling job search or career services platforms, including employment marketplaces, job boards, resume tools, or career development platforms targeting students, educators, or workforce learners
+- Lesson Planning: Candidate has experience selling lesson planning tools, curriculum planning platforms, or instructional resource libraries to teachers or instructional coaches
+- LMS: Stands for Learning Management System
+- Marketing Services: Candidate has experience selling marketing services to educational institutions, such as enrollment marketing agencies, student recruitment communications, or digital advertising services for schools and universities
+- Online Proctoring: Candidate has experience selling online proctoring or test security solutions to higher ed or K12 institutions, including remote proctoring software, identity verification tools, or academic integrity platforms
+- OPM: Stands for Online Program Management
+- Paying for College: Candidate has experience selling financial aid, scholarship, or college financing products, including student loan platforms, scholarship search tools, or financial aid consulting services
+- Payments: Candidate has experience selling payment processing or financial transaction solutions to educational institutions, including online payment portals, cashless payment systems, or tuition billing platforms
+- Presentation Tools: Candidate has experience selling presentation or interactive classroom tools, such as student response systems, presentation software, or collaborative display platforms for K12 or higher ed
+- Retail: Candidate has experience selling through retail channels or to retail buyers
+- SaaS: Candidate has experience selling Software as a Service products
+- SaaS - Enterprise: Candidate has experience selling enterprise-grade SaaS solutions, typically involving complex procurement, multi-stakeholder sales cycles, large contract values, and extensive implementation processes
+- SaaS - ERP: Candidate has experience selling ERP (Enterprise Resource Planning) SaaS solutions, including financial management, HR, and operations platforms for educational institutions or corporate clients
+- Safety: Candidate has experience selling school safety or emergency management products, including visitor management systems, threat assessment tools, emergency notification platforms, or school security software
+- SIS: Stands for Student Information System
+- Staffing: Candidate has experience selling staffing or workforce solutions, including teacher placement services, substitute teacher platforms, or educational staffing agencies
+- Teacher Needs: Candidate has experience selling products designed specifically to support teachers in the classroom, including classroom management tools, instructional resources, communication platforms, or teacher productivity software
+- Test Prep: Candidate has experience selling test preparation products, including SAT/ACT prep, AP exam prep, state standardized test preparation, or professional certification exam prep platforms
+- Translation: Candidate has experience selling translation or localization services and technology, including multilingual content platforms, translation software, or language access tools for schools and districts serving diverse communities
+- Tutoring: Candidate has experience selling tutoring products or services, including online tutoring platforms, on-demand tutoring marketplaces, or school-contracted tutoring programs for K12 or higher ed
+- VR: Candidate has experience selling virtual reality products for educational use, including VR headsets, immersive learning experiences, or simulation-based training platforms
+- Workforce Development: Candidate has experience selling workforce development products or services, including career readiness programs, job training platforms, upskilling tools, employer partnerships, or workforce-aligned curriculum for community colleges and adult learners
 
 Return JSON:
 {
@@ -271,7 +622,7 @@ Return JSON:
   "suggestions": [
     { "category": "Role Title/Level", "tag": "Account Executive", "confidence": "high", "reason": "Current title at Instructure" }
   ],
-  "notes": "Brief recruiter notes"
+  "notes": "Brief recruiter notes — anything notable, gaps, or cautions"
 }`;
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
